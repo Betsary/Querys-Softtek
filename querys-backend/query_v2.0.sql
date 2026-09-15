@@ -52,14 +52,3 @@ END//
 DELIMITER ;
  
  
-DELIMITER //
-CREATE TRIGGER validar_stock_caro
-BEFORE UPDATE ON producto
-FOR EACH ROW
-BEGIN
-    IF NEW.stock <= 10 AND OLD.precio > 100 THEN 
-        SIGNAL SQLSTATE '01000'
-        SET MESSAGE_TEXT = 'Stock de prodcuto importante es menor a 10';
-    END IF;
-END//
-DELIMITER ;

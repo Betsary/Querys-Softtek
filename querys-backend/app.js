@@ -38,7 +38,7 @@ app.get('/products/productsWarning', async (req, res) => {
         const [products] = await pool.query(`
             SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
             FROM producto
-            WHERE stock <= 10
+            WHERE (stock <= 10 AND precio > 100) OR (stock <= 3 AND precio <= 100)
             ORDER BY stock, id_producto
         `);
         res.json(products);
