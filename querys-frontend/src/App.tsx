@@ -31,6 +31,7 @@ const adaptarProducto = (producto: ProductoApi): Producto => ({
 
 function App() {
   const [productos, setProductos] = useState<Producto[]>([])
+  const [productosPocoStock, setProductosPocoStock] = useState<Producto[]>([])
   const [cargando, setCargando] = useState(true)
   const [error, setError] = useState('')
 
@@ -42,27 +43,36 @@ function App() {
   const [productoEditado, setProductoEditado] =
     useState<Producto | null>(null)
 
-  useEffect(() => {
-    const cargarProductos = async () => {
-      try {
-        const respuesta = await fetch('/api/products')
-        if (!respuesta.ok) throw new Error('No se pudieron cargar los productos')
-        const datos: ProductoApi[] = await respuesta.json()
-        setProductos(datos.map(adaptarProducto))
-      } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : 'Error de conexión')
-      } finally {
-        setCargando(false)
-      }
-    }
+  const cargarProductos = async () => {
+    try {
+      const [respuestaProductos, respuestaPocoStock] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/products/productsWarning'),
+      ])
 
+      if (!respuestaProductos.ok) {
+        throw new Error('No se pudieron cargar los productos')
+      }
+
+      if (!respuestaPocoStock.ok) {
+        throw new Error('No se pudieron cargar los productos con poco stock')
+      }
+
+      const datosProductos: ProductoApi[] = await respuestaProductos.json()
+      const datosPocoStock: ProductoApi[] = await respuestaPocoStock.json()
+
+      setProductos(datosProductos.map(adaptarProducto))
+      setProductosPocoStock(datosPocoStock.map(adaptarProducto))
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : 'Error de conexión')
+    } finally {
+      setCargando(false)
+    }
+  }
+
+  useEffect(() => {
     void cargarProductos()
   }, [])
-
-  // Productos con 10 o menos unidades
-  const productosPocoStock = productos.filter(
-    (producto) => producto.stock <= 10
-  )
 
   // Cambiar cantidad
   const cambiarCantidad = (id: number, cantidad: string) => {
@@ -88,11 +98,8 @@ function App() {
         body: JSON.stringify({ stock: cantidad }),
       })
       if (!respuesta.ok) throw new Error('No se pudo actualizar el stock')
-      const productoActualizado: ProductoApi = await respuesta.json()
-      setProductos((prev) => prev.map((producto) =>
-        producto.id === id ? adaptarProducto(productoActualizado) : producto
-      ))
       setCantidades((prev) => ({ ...prev, [id]: 0 }))
+      await cargarProductos()
     } catch (requestError) {
       alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
     }
@@ -110,7 +117,7 @@ function App() {
       try {
         const respuesta = await fetch(`/api/products/delete/${id}`, { method: 'DELETE' })
         if (!respuesta.ok) throw new Error('No se pudo eliminar el producto')
-        setProductos((prev) => prev.filter((producto) => producto.id !== id))
+        await cargarProductos()
       } catch (requestError) {
         alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
       }
@@ -159,11 +166,8 @@ function App() {
         }),
       })
       if (!respuesta.ok) throw new Error('No se pudo actualizar el producto')
-      const productoActualizado: ProductoApi = await respuesta.json()
-      setProductos((prev) => prev.map((producto) =>
-        producto.id === productoEditado.id ? adaptarProducto(productoActualizado) : producto
-      ))
       cancelarEdicion()
+      await cargarProductos()
     } catch (requestError) {
       alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
     }
