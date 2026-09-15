@@ -4,68 +4,122 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', process.env.FRONTEND_URL || 'http://localhost:5173');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+});
 
 // Endpoint health check
 app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-app.get("/products", (req, res)=>{
-    const products =  
-    res.json(products);
-})
+// Obtener todos los productos desde la tabla producto.
+app.get('/products', async (req, res) => {
+    try {
+        const [products] = await pool.query(`
+            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+            FROM producto
+            ORDER BY id_producto
+        `);
+        res.json(products);
+    } catch (error) {
+        console.error('Error al obtener productos:', error.message);
+        res.status(500).json({ error: 'No se pudieron obtener los productos' });
+    }
+});
 
-// Get products with stock <= 10;
-app.get('/products/productsWarning', (req, res) => {
-    const products = [
-        { productId: 1, name: "Leche", price:25, stock: 9},
-        { productId: 13, name: "Tortillas", price:27, stock: 3}
-    ]
-    res.json(products)
-})
+// Obtener productos con stock <= 10.
+app.get('/products/productsWarning', async (req, res) => {
+    try {
+        const [products] = await pool.query(`
+            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+            FROM producto
+            WHERE stock <= 10
+            ORDER BY stock, id_producto
+        `);
+        res.json(products);
+    } catch (error) {
+        console.error('Error al obtener productos con poco stock:', error.message);
+        res.status(500).json({ error: 'No se pudieron obtener los productos con poco stock' });
+    }
+});
 
 // Updating stock
-app.patch("/products/updateStock/:id", (req, res) => {
-    const productId = parseInt(req.params.id);
+app.patch("/products/updateStock/:id", async (req, res) => {
+    const productId = Number.parseInt(req.params.id, 10);
     const stockUpdate = req.body.stock;
 
-    // Validación
-    if (stockUpdate === undefined || typeof stockUpdate !== "number") {
-        res.status(400).json({
-            error : "Stock requerido y debe ser número" 
-        })
+    if (!Number.isInteger(productId) || !Number.isInteger(stockUpdate) || stockUpdate <= 0) {
+        return res.status(400).json({
+            error: "El stock requerido debe ser un entero mayor que cero"
+        });
     }
 
-    // Actualizar el stock. Llamar al storeProcedure.
+    try {
+        await pool.query('CALL ReabastecerProducto(?, ?)', [stockUpdate, productId]);
+        const [products] = await pool.query(
+            'SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock FROM producto WHERE id_producto = ?',
+            [productId]
+        );
 
-    res.json({
-        mensaje: `Stock del producto ${productId} actualizado con éxito.`,
-        id: productId,
-        stock: stock + stockUpdate
-    })
-})
+        if (products.length === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+
+        res.json(products[0]);
+    } catch (error) {
+        console.error('Error al actualizar stock:', error.message);
+        res.status(500).json({ error: 'No se pudo actualizar el stock' });
+    }
+});
 
 // Deleting product
-app.delete("/products/delete/:id", (req, res)=> {
-    const productId = parseInt(req.params.id);
+app.delete("/products/delete/:id", async (req, res) => {
+    const productId = Number.parseInt(req.params.id, 10);
 
-    // Eliminar el producto. Llamar al storeProcedure.
-
-    res.json({
-        mensaje: `Producto con ID ${productId} eliminado correctamente.`
-    });
-})
+    try {
+        const [result] = await pool.query('DELETE FROM producto WHERE id_producto = ?', [productId]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        res.status(204).send();
+    } catch (error) {
+        console.error('Error al eliminar producto:', error.message);
+        res.status(500).json({ error: 'No se pudo eliminar el producto' });
+    }
+});
 
 // Updating product
-app.put("products/update/:id", (req, res) => {
-    const productId = parseInt(req.params.id);
+app.put("/products/update/:id", async (req, res) => {
+    const productId = Number.parseInt(req.params.id, 10);
+    const { nombre, precio, stock } = req.body;
 
-    // Actualizar el producto. Llamar al storeProcedure.
+    if (!Number.isInteger(productId) || !nombre?.trim() || typeof precio !== 'number' || precio < 0 || !Number.isInteger(stock) || stock < 0) {
+        return res.status(400).json({ error: 'Nombre, precio y stock válidos son obligatorios' });
+    }
 
-    res.json({
-        mensaje: `Producto con ID ${productId} actualizado correctamente.`
-    });
-})
+    try {
+        const [result] = await pool.query(
+            'UPDATE producto SET nombre = ?, precio = ?, stock = ? WHERE id_producto = ?',
+            [nombre.trim(), precio, stock, productId]
+        );
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Producto no encontrado' });
+        }
+        const [products] = await pool.query(
+            'SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock FROM producto WHERE id_producto = ?',
+            [productId]
+        );
+        res.json(products[0]);
+    } catch (error) {
+        console.error('Error al actualizar producto:', error.message);
+        res.status(500).json({ error: 'No se pudo actualizar el producto' });
+    }
+});
 
 app.listen(port, ()=> {
     console.log(`Servidor corriendo en el puerto: ${port}`);

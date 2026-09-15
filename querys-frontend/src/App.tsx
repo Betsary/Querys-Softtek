@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
 
 type Producto = {
@@ -9,44 +9,30 @@ type Producto = {
   imagen: string
 }
 
-const productosIniciales: Producto[] = [
-  {
-    id: 1,
-    nombre: 'Laptop',
-    precio: 15000,
-    stock: 8,
-    imagen:
-      'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500',
-  },
-  {
-    id: 2,
-    nombre: 'Audífonos',
-    precio: 1200,
-    stock: 15,
-    imagen:
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
-  },
-  {
-    id: 3,
-    nombre: 'Teclado',
-    precio: 850,
-    stock: 4,
-    imagen:
-      'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500',
-  },
-  {
-    id: 4,
-    nombre: 'Mouse',
-    precio: 500,
-    stock: 0,
-    imagen:
-      'https://images.unsplash.com/photo-1527814050087-3793815479db?w=500',
-  },
-]
+const imagenesPorCategoria: Record<string, string> = {
+  Periféricos:
+    'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=500',
+  Audio: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=500',
+  Accesorios:
+    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=500',
+  Video: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=500',
+  Almacenamiento:
+    'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500',
+}
+
+type ProductoApi = Omit<Producto, 'imagen'> & { categoria: string }
+
+const adaptarProducto = (producto: ProductoApi): Producto => ({
+  ...producto,
+  imagen:
+    imagenesPorCategoria[producto.categoria] ??
+    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500',
+})
 
 function App() {
-  const [productos, setProductos] =
-    useState<Producto[]>(productosIniciales)
+  const [productos, setProductos] = useState<Producto[]>([])
+  const [cargando, setCargando] = useState(true)
+  const [error, setError] = useState('')
 
   const [cantidades, setCantidades] =
     useState<Record<number, number>>({})
@@ -55,6 +41,23 @@ function App() {
 
   const [productoEditado, setProductoEditado] =
     useState<Producto | null>(null)
+
+  useEffect(() => {
+    const cargarProductos = async () => {
+      try {
+        const respuesta = await fetch('/api/products')
+        if (!respuesta.ok) throw new Error('No se pudieron cargar los productos')
+        const datos: ProductoApi[] = await respuesta.json()
+        setProductos(datos.map(adaptarProducto))
+      } catch (requestError) {
+        setError(requestError instanceof Error ? requestError.message : 'Error de conexión')
+      } finally {
+        setCargando(false)
+      }
+    }
+
+    void cargarProductos()
+  }, [])
 
   // Productos con 10 o menos unidades
   const productosPocoStock = productos.filter(
@@ -70,7 +73,7 @@ function App() {
   }
 
   // Reabastecer
-  const reabastecer = (id: number) => {
+  const reabastecer = async (id: number) => {
     const cantidad = cantidades[id] || 0
 
     if (cantidad <= 0) {
@@ -78,21 +81,21 @@ function App() {
       return
     }
 
-    setProductos((prev) =>
-      prev.map((producto) =>
-        producto.id === id
-          ? {
-              ...producto,
-              stock: producto.stock + cantidad,
-            }
-          : producto
-      )
-    )
-
-    setCantidades((prev) => ({
-      ...prev,
-      [id]: 0,
-    }))
+    try {
+      const respuesta = await fetch(`/api/products/updateStock/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: cantidad }),
+      })
+      if (!respuesta.ok) throw new Error('No se pudo actualizar el stock')
+      const productoActualizado: ProductoApi = await respuesta.json()
+      setProductos((prev) => prev.map((producto) =>
+        producto.id === id ? adaptarProducto(productoActualizado) : producto
+      ))
+      setCantidades((prev) => ({ ...prev, [id]: 0 }))
+    } catch (requestError) {
+      alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+    }
   }
 
   // Eliminar
@@ -103,9 +106,15 @@ function App() {
 
     if (!confirmar) return
 
-    setProductos((prev) =>
-      prev.filter((producto) => producto.id !== id)
-    )
+    void (async () => {
+      try {
+        const respuesta = await fetch(`/api/products/delete/${id}`, { method: 'DELETE' })
+        if (!respuesta.ok) throw new Error('No se pudo eliminar el producto')
+        setProductos((prev) => prev.filter((producto) => producto.id !== id))
+      } catch (requestError) {
+        alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+      }
+    })()
   }
 
   // Editar
@@ -121,7 +130,7 @@ function App() {
   }
 
   // Guardar edición
-  const guardarEdicion = () => {
+  const guardarEdicion = async () => {
     if (!productoEditado) return
 
     if (!productoEditado.nombre.trim()) {
@@ -139,15 +148,25 @@ function App() {
       return
     }
 
-    setProductos((prev) =>
-      prev.map((producto) =>
-        producto.id === productoEditado.id
-          ? productoEditado
-          : producto
-      )
-    )
-
-    cancelarEdicion()
+    try {
+      const respuesta = await fetch(`/api/products/update/${productoEditado.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: productoEditado.nombre,
+          precio: productoEditado.precio,
+          stock: productoEditado.stock,
+        }),
+      })
+      if (!respuesta.ok) throw new Error('No se pudo actualizar el producto')
+      const productoActualizado: ProductoApi = await respuesta.json()
+      setProductos((prev) => prev.map((producto) =>
+        producto.id === productoEditado.id ? adaptarProducto(productoActualizado) : producto
+      ))
+      cancelarEdicion()
+    } catch (requestError) {
+      alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+    }
   }
 
  // Tarjeta de producto
@@ -356,7 +375,16 @@ const ProductoCard = ({
           </span>
         </div>
 
-        {productos.length > 0 ? (
+        {cargando ? (
+          <div className="sin-productos">
+            <h2>Cargando productos...</h2>
+          </div>
+        ) : error ? (
+          <div className="sin-productos">
+            <h2>No se pudo conectar con la base de datos</h2>
+            <p>{error}</p>
+          </div>
+        ) : productos.length > 0 ? (
          <div className="productos">
           {productos.map((producto) => (
             <ProductoCard
