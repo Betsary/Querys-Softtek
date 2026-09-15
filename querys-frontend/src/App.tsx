@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import './App.css'
+import Trys from './Trys'
 
 type Producto = {
   id: number
@@ -21,6 +22,21 @@ const imagenesPorCategoria: Record<string, string> = {
 }
 
 type ProductoApi = Omit<Producto, 'imagen'> & { categoria: string }
+
+const ejecutarCrud = async (optionMenu: number, data = {}) => {
+  const respuesta = await fetch('/api/products/crud', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ optionMenu, data }),
+  })
+
+  if (!respuesta.ok) {
+    const detalle = await respuesta.json().catch(() => null)
+    throw new Error(detalle?.error ?? 'No se pudo realizar la operación')
+  }
+
+  return respuesta.json()
+}
 
 const adaptarProducto = (producto: ProductoApi): Producto => ({
   ...producto,
@@ -45,24 +61,13 @@ function App() {
 
   const cargarProductos = async () => {
     try {
-      const [respuestaProductos, respuestaPocoStock] = await Promise.all([
-        fetch('/api/products'),
-        fetch('/api/products/productsWarning'),
+      const [datosProductos, datosPocoStock] = await Promise.all([
+        ejecutarCrud(1),
+        ejecutarCrud(2),
       ])
 
-      if (!respuestaProductos.ok) {
-        throw new Error('No se pudieron cargar los productos')
-      }
-
-      if (!respuestaPocoStock.ok) {
-        throw new Error('No se pudieron cargar los productos con poco stock')
-      }
-
-      const datosProductos: ProductoApi[] = await respuestaProductos.json()
-      const datosPocoStock: ProductoApi[] = await respuestaPocoStock.json()
-
-      setProductos(datosProductos.map(adaptarProducto))
-      setProductosPocoStock(datosPocoStock.map(adaptarProducto))
+      setProductos((datosProductos as ProductoApi[]).map(adaptarProducto))
+      setProductosPocoStock((datosPocoStock as ProductoApi[]).map(adaptarProducto))
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : 'Error de conexión')
     } finally {
@@ -92,12 +97,7 @@ function App() {
     }
 
     try {
-      const respuesta = await fetch(`/api/products/updateStock/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock: cantidad }),
-      })
-      if (!respuesta.ok) throw new Error('No se pudo actualizar el stock')
+      await ejecutarCrud(3, { productId: id, stockUpdate: cantidad })
       setCantidades((prev) => ({ ...prev, [id]: 0 }))
       await cargarProductos()
     } catch (requestError) {
@@ -115,8 +115,7 @@ function App() {
 
     void (async () => {
       try {
-        const respuesta = await fetch(`/api/products/delete/${id}`, { method: 'DELETE' })
-        if (!respuesta.ok) throw new Error('No se pudo eliminar el producto')
+        await ejecutarCrud(4, { productId: id })
         await cargarProductos()
       } catch (requestError) {
         alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
@@ -156,16 +155,12 @@ function App() {
     }
 
     try {
-      const respuesta = await fetch(`/api/products/update/${productoEditado.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: productoEditado.nombre,
-          precio: productoEditado.precio,
-          stock: productoEditado.stock,
-        }),
+      await ejecutarCrud(5, {
+        productId: productoEditado.id,
+        nombre: productoEditado.nombre,
+        precio: productoEditado.precio,
+        stock: productoEditado.stock,
       })
-      if (!respuesta.ok) throw new Error('No se pudo actualizar el producto')
       cancelarEdicion()
       await cargarProductos()
     } catch (requestError) {
@@ -438,6 +433,7 @@ const ProductoCard = ({
         </section>
       )}
 
+      <Trys />
     </main>
   )
 }

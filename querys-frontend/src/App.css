@@ -295,6 +295,7 @@ body {
 
 .producto-titulo h2 {
   margin-bottom: 0;
+  width: 100%;
 }
 
 .producto-info {

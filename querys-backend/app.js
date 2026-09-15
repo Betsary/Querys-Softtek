@@ -17,15 +17,32 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
+const ejecutarCrud = async (option, data = {}) => {
+    const [resultSets] = await pool.query('CALL CRUD(?, ?)', [option, JSON.stringify(data)]);
+    return resultSets[0] ?? [];
+};
+
+// Operaciones: 1 listar, 2 advertencias, 3 stock, 4 eliminar, 5 editar.
+app.post('/products/crud', async (req, res) => {
+    const option = Number(req.body?.optionMenu);
+    const data = req.body?.data ?? {};
+
+    if (!Number.isInteger(option) || option < 1 || option > 5 || typeof data !== 'object' || data === null) {
+        return res.status(400).json({ error: 'La opción y los datos CRUD no son válidos' });
+    }
+
+    try {
+        res.json(await ejecutarCrud(option, data));
+    } catch (error) {
+        console.error('Error en CRUD:', error.message);
+        res.status(500).json({ error: error.sqlMessage || 'No se pudo realizar la operación CRUD' });
+    }
+});
+
 // Obtener todos los productos desde la tabla producto.
 app.get('/products', async (req, res) => {
     try {
-        const [products] = await pool.query(`
-            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
-            FROM producto
-            ORDER BY id_producto
-        `);
-        res.json(products);
+        res.json(await ejecutarCrud(1));
     } catch (error) {
         console.error('Error al obtener productos:', error.message);
         res.status(500).json({ error: 'No se pudieron obtener los productos' });
@@ -35,13 +52,7 @@ app.get('/products', async (req, res) => {
 // Obtener productos con stock <= 10.
 app.get('/products/productsWarning', async (req, res) => {
     try {
-        const [products] = await pool.query(`
-            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
-            FROM producto
-            WHERE (stock <= 10 AND precio > 100) OR (stock <= 3 AND precio <= 100)
-            ORDER BY stock, id_producto
-        `);
-        res.json(products);
+        res.json(await ejecutarCrud(2));
     } catch (error) {
         console.error('Error al obtener productos con poco stock:', error.message);
         res.status(500).json({ error: 'No se pudieron obtener los productos con poco stock' });
@@ -60,11 +71,7 @@ app.patch("/products/updateStock/:id", async (req, res) => {
     }
 
     try {
-        await pool.query('CALL ReabastecerProducto(?, ?)', [stockUpdate, productId]);
-        const [products] = await pool.query(
-            'SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock FROM producto WHERE id_producto = ?',
-            [productId]
-        );
+        const products = await ejecutarCrud(3, { productId, stockUpdate });
 
         if (products.length === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
@@ -82,8 +89,8 @@ app.delete("/products/delete/:id", async (req, res) => {
     const productId = Number.parseInt(req.params.id, 10);
 
     try {
-        const [result] = await pool.query('DELETE FROM producto WHERE id_producto = ?', [productId]);
-        if (result.affectedRows === 0) {
+        const result = await ejecutarCrud(4, { productId });
+        if (!result[0]?.affectedRows) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
         res.status(204).send();
@@ -103,17 +110,10 @@ app.put("/products/update/:id", async (req, res) => {
     }
 
     try {
-        const [result] = await pool.query(
-            'UPDATE producto SET nombre = ?, precio = ?, stock = ? WHERE id_producto = ?',
-            [nombre.trim(), precio, stock, productId]
-        );
-        if (result.affectedRows === 0) {
+        const products = await ejecutarCrud(5, { productId, nombre: nombre.trim(), precio, stock });
+        if (products.length === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
-        const [products] = await pool.query(
-            'SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock FROM producto WHERE id_producto = ?',
-            [productId]
-        );
         res.json(products[0]);
     } catch (error) {
         console.error('Error al actualizar producto:', error.message);
