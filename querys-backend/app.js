@@ -10,6 +10,11 @@ app.get('/health', (req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
+app.get("/products", (req, res)=>{
+    const products =  
+    res.json(products);
+})
+
 // Get products with stock <= 10;
 app.get('/products/productsWarning', (req, res) => {
     const products = [
