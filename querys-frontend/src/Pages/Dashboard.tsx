@@ -223,57 +223,54 @@ function Dashboard() {
 
   return (
     <div className="app">
-
+<link
+  href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+  rel="stylesheet"
+/>
       {/* SIDEBAR */}
       <aside className={`sidebar ${menuAbierto ? "open" : ""}`}>
-        <div className="logo">
-          <div className="logo-icon">+</div>
-          <div>
-            <strong>HealthCare</strong>
-            <span>Dashboard</span>
-          </div>
-        </div>
-
-        <nav>
-          <a className="nav-item active">
-            <span>▦</span>
-            Dashboard
-          </a>
-
-          <a className="nav-item">
-            <span>👥</span>
-            Usuarios
-          </a>
-
-          <a className="nav-item">
-            <span>💆</span>
-            Masajes
-          </a>
-
-          <a className="nav-item">
-            <span>🏥</span>
-            Rehabilitación
-          </a>
-
-          <a className="nav-item">
-            <span>📊</span>
-            Reportes
-          </a>
-        </nav>
-
-        <div className="sidebar-bottom">
-          <div className="user-profile">
-            <div className="avatar">AD</div>
+        <div className="sidebar-container">
+          <div className="logo">
+            <div className="logo-icon">+</div>
             <div>
-              <strong>Administrador</strong>
-              <span>admin@empresa.com</span>
+              <strong>HealthCare</strong>
+              <span>Dashboard</span>
             </div>
           </div>
+
+          <nav>
+            <a
+              href="#dashboard"
+              className="nav-item active"
+              onClick={() => setMenuAbierto(false)}
+            >
+              <span>▦</span>
+              Dashboard
+            </a>
+
+                <a
+              href="#reportes"
+              className="nav-item"
+              onClick={() => setMenuAbierto(false)}
+            >
+              <span>📊</span>
+              Reportes
+            </a>
+
+            <a
+              href="#usuarios"
+              className="nav-item"
+              onClick={() => setMenuAbierto(false)}
+            >
+              <span>👥</span>
+              Usuarios
+            </a>
+          </nav>
         </div>
       </aside>
 
       {/* CONTENIDO */}
-      <main className="main">
+      <main className="main" id="dashboard">
 
         {/* HEADER */}
         <header className="header">
@@ -296,452 +293,481 @@ function Dashboard() {
             <strong>17 Sep 2026</strong>
           </div>
         </header>
+        
+<div className="content-layout">
 
-        {/* FILTROS */}
-        <section className="filters-card">
+  {/* =========================================
+      CONTENIDO PRINCIPAL — IZQUIERDA
+  ========================================= */}
 
-          <div className="filter-header">
-            <div>
-              <h2>Filtros</h2>
-              <span>
-                Filtra los resultados para obtener información específica.
-              </span>
-            </div>
+  <div className="dashboard-content">
 
-            <button
-              className="clear-button"
-              onClick={limpiarFiltros}
-            >
-              Limpiar filtros
-            </button>
+    {/* TARJETAS */}
+    <section className="stats">
+
+      <StatCard
+        title="Masajes"
+        value={estadisticas.masajes}
+        percentage={porcentaje(estadisticas.masajes)}
+        icon="💆"
+        color="blue"
+      />
+
+      <StatCard
+        title="Rehabilitación"
+        value={estadisticas.rehabilitacion}
+        percentage={porcentaje(estadisticas.rehabilitacion)}
+        icon="🏥"
+        color="purple"
+      />
+
+      <StatCard
+        title="Ambos servicios"
+        value={estadisticas.ambos}
+        percentage={porcentaje(estadisticas.ambos)}
+        icon="🔄"
+        color="green"
+      />
+
+      <StatCard
+        title="Ningún servicio"
+        value={estadisticas.ninguno}
+        percentage={porcentaje(estadisticas.ninguno)}
+        icon="○"
+        color="orange"
+      />
+
+    </section>
+
+
+    {/* GRÁFICAS */}
+    <section id="reportes" className="dashboard-grid">
+
+      {/* GRÁFICA */}
+      <div className="card chart-card">
+
+        <div className="card-title">
+          <div>
+            <h2>Usuarios por servicio</h2>
+            <p>
+              Distribución de usuarios según los servicios utilizados.
+            </p>
           </div>
-
-          <div className="filters">
-
-            <div className="filter">
-              <label>Género</label>
-
-              <select
-                value={filtros.genero}
-                onChange={(e) =>
-                  actualizarFiltro(
-                    "genero",
-                    e.target.value
-                  )
-                }
-              >
-                <option value="">Todos</option>
-                <option value="Femenino">Femenino</option>
-                <option value="Masculino">Masculino</option>
-              </select>
-            </div>
-
-            <div className="filter">
-              <label>Rango de edad</label>
-
-              <select
-                value={filtros.rangoEdad}
-                onChange={(e) =>
-                  actualizarFiltro(
-                    "rangoEdad",
-                    e.target.value
-                  )
-                }
-              >
-                <option value="">Todas las edades</option>
-                <option value="18-25">18 - 25</option>
-                <option value="26-35">26 - 35</option>
-                <option value="36-45">36 - 45</option>
-                <option value="46-55">46 - 55</option>
-                <option value="56+">56+</option>
-              </select>
-            </div>
-
-            <div className="filter">
-              <label>Departamento</label>
-
-              <select
-                value={filtros.departamento}
-                onChange={(e) =>
-                  actualizarFiltro(
-                    "departamento",
-                    e.target.value
-                  )
-                }
-              >
-                <option value="">Todos</option>
-                <option value="Recursos Humanos">
-                  Recursos Humanos
-                </option>
-                <option value="Finanzas">
-                  Finanzas
-                </option>
-                <option value="Tecnología">
-                  Tecnología
-                </option>
-                <option value="Operaciones">
-                  Operaciones
-                </option>
-              </select>
-            </div>
-
-            <div className="filter">
-              <label>ID de usuario</label>
-
-              <input
-                type="text"
-                placeholder="Ej. 1001"
-                value={filtros.idUsuario}
-                onChange={(e) =>
-                  actualizarFiltro(
-                    "idUsuario",
-                    e.target.value
-                  )
-                }
-              />
-            </div>
-
-          </div>
-        </section>
-
-        {/* RESULTADO DE FILTROS */}
-        <div className="results-info">
-          <span>
-            Mostrando <strong>{total}</strong> usuarios
-          </span>
-
-          {(filtros.genero ||
-            filtros.rangoEdad ||
-            filtros.departamento ||
-            filtros.idUsuario) && (
-            <span className="filtered">
-              ● Filtros activos
-            </span>
-          )}
         </div>
 
-        {/* TARJETAS */}
-        <section className="stats">
+        <div className="chart">
 
-          <StatCard
-            title="Masajes"
+          <Bar
+            label="Masajes"
             value={estadisticas.masajes}
-            percentage={porcentaje(
-              estadisticas.masajes
-            )}
-            icon="💆"
-            color="blue"
+            total={total}
+            color="#2563eb"
           />
 
-          <StatCard
-            title="Rehabilitación"
+          <Bar
+            label="Rehabilitación"
             value={estadisticas.rehabilitacion}
-            percentage={porcentaje(
-              estadisticas.rehabilitacion
-            )}
-            icon="🏥"
-            color="purple"
+            total={total}
+            color="#7c3aed"
           />
 
-          <StatCard
-            title="Ambos servicios"
+          <Bar
+            label="Ambos"
             value={estadisticas.ambos}
-            percentage={porcentaje(
-              estadisticas.ambos
-            )}
-            icon="🔄"
-            color="green"
+            total={total}
+            color="#059669"
           />
 
-          <StatCard
-            title="Ningún servicio"
+          <Bar
+            label="Ninguno"
             value={estadisticas.ninguno}
-            percentage={porcentaje(
-              estadisticas.ninguno
-            )}
-            icon="○"
-            color="orange"
+            total={total}
+            color="#f59e0b"
           />
 
-        </section>
+        </div>
 
-        {/* CONTENIDO INFERIOR */}
-        <section className="dashboard-grid">
+      </div>
 
-          {/* GRÁFICA */}
-          <div className="card chart-card">
 
-            <div className="card-title">
-              <div>
-                <h2>Usuarios por servicio</h2>
-                <p>
-                  Distribución de usuarios según los servicios utilizados.
-                </p>
-              </div>
-            </div>
+      {/* RESUMEN */}
+      <div className="card summary-card">
 
-            <div className="chart">
-
-              <Bar
-                label="Masajes"
-                value={estadisticas.masajes}
-                total={total}
-                color="#2563eb"
-              />
-
-              <Bar
-                label="Rehabilitación"
-                value={estadisticas.rehabilitacion}
-                total={total}
-                color="#7c3aed"
-              />
-
-              <Bar
-                label="Ambos"
-                value={estadisticas.ambos}
-                total={total}
-                color="#059669"
-              />
-
-              <Bar
-                label="Ninguno"
-                value={estadisticas.ninguno}
-                total={total}
-                color="#f59e0b"
-              />
-
-            </div>
-
+        <div className="card-title">
+          <div>
+            <h2>Resumen</h2>
+            <p>Usuarios filtrados</p>
           </div>
+        </div>
 
-          {/* RESUMEN */}
-          <div className="card summary-card">
+        <div className="donut-container">
 
-            <div className="card-title">
-              <div>
-                <h2>Resumen</h2>
-                <p>Usuarios filtrados</p>
-              </div>
-            </div>
-
-            <div className="donut-container">
-
-              <div
-                className="donut"
-                style={{
-                  background: `conic-gradient(
-                    #2563eb 0% ${porcentaje(
-                      estadisticas.masajes
-                    )}%,
-                    #7c3aed ${porcentaje(
-                      estadisticas.masajes
-                    )}% ${
-                      porcentaje(
-                        estadisticas.masajes
-                      ) +
-                      porcentaje(
-                        estadisticas.rehabilitacion
-                      )
-                    }%,
-                    #059669 ${
-                      porcentaje(
-                        estadisticas.masajes
-                      ) +
-                      porcentaje(
-                        estadisticas.rehabilitacion
-                      )
-                    }% ${
-                      porcentaje(
-                        estadisticas.masajes
-                      ) +
-                      porcentaje(
-                        estadisticas.rehabilitacion
-                      ) +
-                      porcentaje(
-                        estadisticas.ambos
-                      )
-                    }%,
-                    #f59e0b ${
-                      porcentaje(
-                        estadisticas.masajes
-                      ) +
-                      porcentaje(
-                        estadisticas.rehabilitacion
-                      ) +
-                      porcentaje(
-                        estadisticas.ambos
-                      )
-                    }% 100%
-                  )`,
-                }}
-              >
-                <div>
-                  <strong>{total}</strong>
-                  <span>Usuarios</span>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="legend">
-
-              <Legend
-                color="#2563eb"
-                label="Masajes"
-                value={estadisticas.masajes}
-              />
-
-              <Legend
-                color="#7c3aed"
-                label="Rehabilitación"
-                value={estadisticas.rehabilitacion}
-              />
-
-              <Legend
-                color="#059669"
-                label="Ambos"
-                value={estadisticas.ambos}
-              />
-
-              <Legend
-                color="#f59e0b"
-                label="Ninguno"
-                value={estadisticas.ninguno}
-              />
-
-            </div>
-
-          </div>
-
-        </section>
-
-        {/* TABLA */}
-        <section className="card table-card">
-
-          <div className="card-title table-header">
+          <div
+            className="donut"
+            style={{
+              background: `conic-gradient(
+                #2563eb 0% ${porcentaje(estadisticas.masajes)}%,
+                #7c3aed ${porcentaje(estadisticas.masajes)}% ${
+                  porcentaje(estadisticas.masajes) +
+                  porcentaje(estadisticas.rehabilitacion)
+                }%,
+                #059669 ${
+                  porcentaje(estadisticas.masajes) +
+                  porcentaje(estadisticas.rehabilitacion)
+                }% ${
+                  porcentaje(estadisticas.masajes) +
+                  porcentaje(estadisticas.rehabilitacion) +
+                  porcentaje(estadisticas.ambos)
+                }%,
+                #f59e0b ${
+                  porcentaje(estadisticas.masajes) +
+                  porcentaje(estadisticas.rehabilitacion) +
+                  porcentaje(estadisticas.ambos)
+                }% 100%
+              )`,
+            }}
+          >
             <div>
-              <h2>Usuarios</h2>
-              <p>
-                Detalle de usuarios que coinciden con los filtros.
-              </p>
+              <strong>{total}</strong>
+              <span>Usuarios</span>
             </div>
-
-            <span className="counter">
-              {usuariosFiltrados.length} registros
-            </span>
           </div>
 
-          <div className="table-container">
+        </div>
 
-            <table>
+        <div className="legend">
 
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Usuario</th>
-                  <th>Género</th>
-                  <th>Edad</th>
-                  <th>Departamento</th>
-                  <th>Masajes</th>
-                  <th>Rehabilitación</th>
-                  <th>Categoría</th>
-                </tr>
-              </thead>
+          <Legend
+            color="#2563eb"
+            label="Masajes"
+            value={estadisticas.masajes}
+          />
 
-              <tbody>
+          <Legend
+            color="#7c3aed"
+            label="Rehabilitación"
+            value={estadisticas.rehabilitacion}
+          />
 
-                {usuariosFiltrados.map((usuario) => {
+          <Legend
+            color="#059669"
+            label="Ambos"
+            value={estadisticas.ambos}
+          />
 
-                  let categoria = "Ninguno";
+          <Legend
+            color="#f59e0b"
+            label="Ninguno"
+            value={estadisticas.ninguno}
+          />
 
-                  if (
-                    usuario.masajes &&
-                    usuario.rehabilitacion
-                  ) {
-                    categoria = "Ambos";
-                  } else if (usuario.masajes) {
-                    categoria = "Masajes";
-                  } else if (usuario.rehabilitacion) {
-                    categoria = "Rehabilitación";
-                  }
+        </div>
 
-                  return (
-                    <tr key={usuario.id}>
+      </div>
 
-                      <td>
-                        <strong>
-                          #{usuario.id}
-                        </strong>
-                      </td>
+    </section>
 
-                      <td>
-                        <div className="user-cell">
-                          <div className="small-avatar">
-                            {usuario.nombre
-                              .split(" ")
-                              .map((n) => n[0])
-                              .slice(0, 2)
-                              .join("")}
-                          </div>
 
-                          {usuario.nombre}
-                        </div>
-                      </td>
+    {/* TABLA */}
+    <section className="card table-card" id="usuarios">
 
-                      <td>{usuario.genero}</td>
+      <div className="card-title table-header">
 
-                      <td>{usuario.edad}</td>
+        <div>
+          <h2>Usuarios</h2>
+          <p>
+            Detalle de usuarios que coinciden con los filtros.
+          </p>
+        </div>
 
-                      <td>{usuario.departamento}</td>
+        <span className="counter">
+          {usuariosFiltrados.length} registros
+        </span>
 
-                      <td>
-                        <Status
-                          activo={usuario.masajes}
-                        />
-                      </td>
+      </div>
 
-                      <td>
-                        <Status
-                          activo={
-                            usuario.rehabilitacion
-                          }
-                        />
-                      </td>
+      <div className="table-container">
 
-                      <td>
-                        <span
-                          className={`category ${categoria
-                            .toLowerCase()
-                            .replace("ó", "o")}`}
-                        >
-                          {categoria}
-                        </span>
-                      </td>
+        <table>
 
-                    </tr>
-                  );
-                })}
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Usuario</th>
+              <th>Género</th>
+              <th>Edad</th>
+              <th>Departamento</th>
+              <th>Servicio</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
 
-                {usuariosFiltrados.length === 0 && (
-                  <tr>
-                    <td
-                     
-                      className="empty"
+          <tbody>
+
+            {usuariosFiltrados.map((usuario) => {
+
+              let categoria = "Ninguno";
+
+              if (
+                usuario.masajes &&
+                usuario.rehabilitacion
+              ) {
+                categoria = "Ambos";
+              } else if (usuario.masajes) {
+                categoria = "Masajes";
+              } else if (usuario.rehabilitacion) {
+                categoria = "Rehabilitación";
+              }
+
+              return (
+                <tr key={usuario.id}>
+
+                  <td>
+                    <strong>
+                      #{usuario.id}
+                    </strong>
+                  </td>
+
+                  <td>
+                    <div className="user-cell">
+
+                      <div className="small-avatar">
+                        {usuario.nombre
+                          .split(" ")
+                          .map((n) => n[0])
+                          .slice(0, 2)
+                          .join("")}
+                      </div>
+
+                      {usuario.nombre}
+
+                    </div>
+                  </td>
+
+                  <td>{usuario.genero}</td>
+
+                  <td>{usuario.edad}</td>
+
+                  <td>{usuario.departamento}</td>
+
+      
+
+                  <td>
+                    <span
+                      className={`category ${categoria
+                        .toLowerCase()
+                        .replace("ó", "o")}`}
                     >
-                      No se encontraron usuarios
-                      con los filtros seleccionados.
-                    </td>
-                  </tr>
-                )}
+                      {categoria}
+                    </span>
+                  </td>
 
-              </tbody>
+                  {/* <td>{usuario.fecha || "N/A"}</td> */}
 
-            </table>
+                </tr>
+              );
+            })}
 
-          </div>
+            {usuariosFiltrados.length === 0 && (
+              <tr>
+                <td colSpan={8} className="empty">
+                  No se encontraron usuarios
+                  con los filtros seleccionados.
+                </td>
+              </tr>
+            )}
 
-        </section>
+          </tbody>
 
+        </table>
+
+      </div>
+
+    </section>
+
+  </div>
+
+
+  {/* =========================================
+      FILTROS — DERECHA
+  ========================================= */}
+
+  <aside className="filters-sidebar">
+
+    <section className="filters-card">
+
+      <div className="filter-header">
+
+        <div>
+          <h2>Filtros</h2>
+
+          <span>
+            Personaliza los resultados.
+          </span>
+        </div>
+
+        <button
+          className="clear-button"
+          onClick={limpiarFiltros}
+        >
+          Limpiar
+        </button>
+
+      </div>
+
+
+      <div className="filters">
+
+        <div className="filter">
+
+          <label>Género</label>
+
+          <select
+            value={filtros.genero}
+            onChange={(e) =>
+              actualizarFiltro(
+                "genero",
+                e.target.value
+              )
+            }
+          >
+            <option value="">Todos</option>
+            <option value="Femenino">
+              Femenino
+            </option>
+            <option value="Masculino">
+              Masculino
+            </option>
+          </select>
+
+        </div>
+
+
+        <div className="filter">
+
+          <label>Rango de edad</label>
+
+          <select
+            value={filtros.rangoEdad}
+            onChange={(e) =>
+              actualizarFiltro(
+                "rangoEdad",
+                e.target.value
+              )
+            }
+          >
+            <option value="">
+              Todas las edades
+            </option>
+
+            <option value="18-25">
+              18 - 25
+            </option>
+
+            <option value="26-35">
+              26 - 35
+            </option>
+
+            <option value="36-45">
+              36 - 45
+            </option>
+
+            <option value="46-55">
+              46 - 55
+            </option>
+
+            <option value="56+">
+              56+
+            </option>
+          </select>
+
+        </div>
+
+
+        <div className="filter">
+
+          <label>Departamento</label>
+
+          <select
+            value={filtros.departamento}
+            onChange={(e) =>
+              actualizarFiltro(
+                "departamento",
+                e.target.value
+              )
+            }
+          >
+            <option value="">Todos</option>
+
+            <option value="Recursos Humanos">
+              Recursos Humanos
+            </option>
+
+            <option value="Finanzas">
+              Finanzas
+            </option>
+
+            <option value="Tecnología">
+              Tecnología
+            </option>
+
+            <option value="Operaciones">
+              Operaciones
+            </option>
+          </select>
+
+        </div>
+
+
+        <div className="filter">
+
+          <label>ID de usuario</label>
+
+          <input
+            type="text"
+            placeholder="Ej. 1001"
+            value={filtros.idUsuario}
+            onChange={(e) =>
+              actualizarFiltro(
+                "idUsuario",
+                e.target.value
+              )
+            }
+          />
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    {/* RESULTADOS */}
+
+    <div className="results-info">
+
+      <span>
+        Mostrando <strong>{total}</strong> usuarios
+      </span>
+
+      {(filtros.genero ||
+        filtros.rangoEdad ||
+        filtros.departamento ||
+        filtros.idUsuario) && (
+
+        <span className="filtered">
+          ● Filtros activos
+        </span>
+
+      )}
+
+    </div>
+
+  </aside>
+
+</div>
+
+      
       </main>
     </div>
   );
@@ -753,7 +779,9 @@ type StatCardProps = {
   percentage: number;
   icon: string;
   color: string;
+  id?: string;
 };
+
 
 
 function StatCard({
@@ -762,9 +790,13 @@ function StatCard({
   percentage,
   icon,
   color,
+  id,
 }: StatCardProps) {
   return (
-    <div className="stat-card">
+    <div
+      id={id}
+      className="stat-card"
+    >
       <div className={`stat-icon ${color}`}>
         {icon}
       </div>
@@ -783,6 +815,7 @@ function StatCard({
     </div>
   );
 }
+
 
 type BarProps = {
   label: string;
