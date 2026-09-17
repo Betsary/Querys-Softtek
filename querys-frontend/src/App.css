@@ -233,17 +233,9 @@ body {
 }
 
 
-.reabastecimiento {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-}
-
 .reabastecimiento input {
-  width: 90px;
-  flex-shrink: 0;
-  padding: 11px 10px;
+  width: 110px;
+  padding: 11px 12px;
   border: 1px solid #d1d5db;
   border-radius: 10px;
   font-size: 0.95rem;
@@ -256,19 +248,30 @@ body {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* Quitar flechas del input number */
+.reabastecimiento input::-webkit-inner-spin-button,
+.reabastecimiento input::-webkit-outer-spin-button {
+  opacity: 1;
+}
+
+.reabastecimiento {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+}
+
+
 /* Botón */
 .reabastecimiento button {
   flex: 1;
-  min-width: 115px;
-  padding: 11px 12px;
   border: none;
   border-radius: 10px;
   background: #2563eb;
   color: white;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  white-space: nowrap;
   transition:
     background 0.2s ease,
     transform 0.1s ease;
@@ -281,7 +284,6 @@ body {
 .reabastecimiento button:active {
   transform: scale(0.97);
 }
-
 
 
 /* Título y acciones */
