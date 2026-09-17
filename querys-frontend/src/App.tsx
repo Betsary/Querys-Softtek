@@ -5,6 +5,9 @@ import Trys from './Trys'
 type Producto = {
   id: number
   nombre: string
+  descripcion: string
+  categoria: string
+  status: boolean
   precio: number
   stock: number
   imagen: string
@@ -21,7 +24,7 @@ const imagenesPorCategoria: Record<string, string> = {
     'https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=500',
 }
 
-type ProductoApi = Omit<Producto, 'imagen'> & { categoria: string }
+type ProductoApi = Omit<Producto, 'imagen'>
 
 const ejecutarCrud = async (optionMenu: number, data = {}) => {
   const respuesta = await fetch('/api/products/crud', {
@@ -67,9 +70,15 @@ function App() {
       ])
 
       setProductos((datosProductos as ProductoApi[]).map(adaptarProducto))
-      setProductosPocoStock((datosPocoStock as ProductoApi[]).map(adaptarProducto))
+      setProductosPocoStock(
+        (datosPocoStock as ProductoApi[]).map(adaptarProducto)
+      )
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Error de conexión')
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Error de conexión'
+      )
     } finally {
       setCargando(false)
     }
@@ -97,11 +106,23 @@ function App() {
     }
 
     try {
-      await ejecutarCrud(3, { productId: id, stockUpdate: cantidad })
-      setCantidades((prev) => ({ ...prev, [id]: 0 }))
+      await ejecutarCrud(3, {
+        id_producto: id,
+        stockUpdate: cantidad,
+      })
+
+      setCantidades((prev) => ({
+        ...prev,
+        [id]: 0,
+      }))
+
       await cargarProductos()
     } catch (requestError) {
-      alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+      alert(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Error de conexión'
+      )
     }
   }
 
@@ -115,10 +136,17 @@ function App() {
 
     void (async () => {
       try {
-        await ejecutarCrud(4, { productId: id })
+        await ejecutarCrud(4, {
+          id_producto: id,
+        })
+
         await cargarProductos()
       } catch (requestError) {
-        alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+        alert(
+          requestError instanceof Error
+            ? requestError.message
+            : 'Error de conexión'
+        )
       }
     })()
   }
@@ -156,194 +184,201 @@ function App() {
 
     try {
       await ejecutarCrud(5, {
-        productId: productoEditado.id,
+        id_producto: productoEditado.id,
         nombre: productoEditado.nombre,
+        descripcion: productoEditado.descripcion,
+        categoria: productoEditado.categoria,
+        status: productoEditado.status,
         precio: productoEditado.precio,
         stock: productoEditado.stock,
       })
+
       cancelarEdicion()
       await cargarProductos()
     } catch (requestError) {
-      alert(requestError instanceof Error ? requestError.message : 'Error de conexión')
+      alert(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Error de conexión'
+      )
     }
   }
 
- // Tarjeta de producto
-const ProductoCard = ({
-  producto,
-  modo,
-}: {
-  producto: Producto
-  modo: 'todos' | 'poco-stock'
-}) => (
-  <article className="producto">
-    <img
-      src={producto.imagen}
-      alt={producto.nombre}
-      className="producto-imagen"
-    />
+  // Tarjeta de producto
+  const ProductoCard = ({
+    producto,
+    modo,
+  }: {
+    producto: Producto
+    modo: 'todos' | 'poco-stock'
+  }) => (
+    <article className="producto">
+      <img
+        src={producto.imagen}
+        alt={producto.nombre}
+        className="producto-imagen"
+      />
 
-    <div className="producto-info">
-      {editando === producto.id && productoEditado ? (
-        <div className="formulario-edicion">
-          <h2>Editar producto</h2>
+      <div className="producto-info">
+        {editando === producto.id && productoEditado ? (
+          <div className="formulario-edicion">
+            <h2>Editar producto</h2>
 
-          <label>
-            Nombre
-            <input
-              type="text"
-              value={productoEditado.nombre}
-              onChange={(e) =>
-                setProductoEditado({
-                  ...productoEditado,
-                  nombre: e.target.value,
-                })
-              }
-            />
-          </label>
+            <label>
+              Nombre
+              <input
+                type="text"
+                value={productoEditado.nombre}
+                onChange={(e) =>
+                  setProductoEditado({
+                    ...productoEditado,
+                    nombre: e.target.value,
+                  })
+                }
+              />
+            </label>
 
-          <label>
-            Precio
-            <input
-              type="number"
-              min="0"
-              value={productoEditado.precio}
-              onChange={(e) =>
-                setProductoEditado({
-                  ...productoEditado,
-                  precio: Number(e.target.value),
-                })
-              }
-            />
-          </label>
+            <label>
+              Precio
+              <input
+                type="number"
+                min="0"
+                value={productoEditado.precio}
+                onChange={(e) =>
+                  setProductoEditado({
+                    ...productoEditado,
+                    precio: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
 
-          <label>
-            Stock
-            <input
-              type="number"
-              min="0"
-              value={productoEditado.stock}
-              onChange={(e) =>
-                setProductoEditado({
-                  ...productoEditado,
-                  stock: Number(e.target.value),
-                })
-              }
-            />
-          </label>
+            <label>
+              Stock
+              <input
+                type="number"
+                min="0"
+                value={productoEditado.stock}
+                onChange={(e) =>
+                  setProductoEditado({
+                    ...productoEditado,
+                    stock: Number(e.target.value),
+                  })
+                }
+              />
+            </label>
 
-          <label>
-            URL de imagen
-            <input
-              type="text"
-              value={productoEditado.imagen}
-              onChange={(e) =>
-                setProductoEditado({
-                  ...productoEditado,
-                  imagen: e.target.value,
-                })
-              }
-            />
-          </label>
+            <label>
+              URL de imagen
+              <input
+                type="text"
+                value={productoEditado.imagen}
+                onChange={(e) =>
+                  setProductoEditado({
+                    ...productoEditado,
+                    imagen: e.target.value,
+                  })
+                }
+              />
+            </label>
 
-          <div className="acciones-edicion">
-            <button
-              className="btn-guardar"
-              onClick={guardarEdicion}
-            >
-               Guardar
-            </button>
+            <div className="acciones-edicion">
+              <button
+                className="btn-guardar"
+                onClick={guardarEdicion}
+              >
+                Guardar
+              </button>
 
-            <button
-              className="btn-cancelar"
-              onClick={cancelarEdicion}
-            >
-              Cancelar
-            </button>
+              <button
+                className="btn-cancelar"
+                onClick={cancelarEdicion}
+              >
+                Cancelar
+              </button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <>
-          <div className="producto-titulo">
-            <h2>{producto.nombre}</h2>
+        ) : (
+          <>
+            <div className="producto-titulo">
+              <h2>{producto.nombre}</h2>
 
-            {/* SOLO EN TODOS LOS PRODUCTOS */}
-            {modo === 'todos' && (
-              <div className="acciones-producto">
-                <button
-                  className="btn-editar"
-                  onClick={() => abrirEdicion(producto)}
-                  title="Editar producto"
-                >
-                  ✏️
-                </button>
+              {/* SOLO EN TODOS LOS PRODUCTOS */}
+              {modo === 'todos' && (
+                <div className="acciones-producto">
+                  <button
+                    className="btn-editar"
+                    onClick={() => abrirEdicion(producto)}
+                    title="Editar producto"
+                  >
+                    ✏️
+                  </button>
 
-                <button
-                  className="btn-eliminar"
-                  onClick={() =>
-                    eliminarProducto(producto.id)
+                  <button
+                    className="btn-eliminar"
+                    onClick={() =>
+                      eliminarProducto(producto.id)
+                    }
+                    title="Eliminar producto"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <p className="precio">
+              ${producto.precio.toLocaleString('es-MX')}
+            </p>
+
+            <div className="stock">
+              <span>Stock:</span>
+
+              <strong
+                className={
+                  producto.stock === 0
+                    ? 'agotado'
+                    : producto.stock <= 10
+                      ? 'poco-stock'
+                      : 'disponible'
+                }
+              >
+                {producto.stock === 0
+                  ? 'Agotado'
+                  : `${producto.stock} unidades`}
+              </strong>
+            </div>
+
+            {/* SOLO EN POCO STOCK */}
+            {modo === 'poco-stock' && (
+              <div className="reabastecimiento">
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Cantidad"
+                  value={cantidades[producto.id] || ''}
+                  onChange={(e) =>
+                    cambiarCantidad(
+                      producto.id,
+                      e.target.value
+                    )
                   }
-                  title="Eliminar producto"
+                />
+
+                <button
+                  onClick={() =>
+                    reabastecer(producto.id)
+                  }
                 >
-                  🗑️
+                  Reabastecer
                 </button>
               </div>
             )}
-          </div>
-
-          <p className="precio">
-            ${producto.precio.toLocaleString('es-MX')}
-          </p>
-
-          <div className="stock">
-            <span>Stock:</span>
-
-            <strong
-              className={
-                producto.stock === 0
-                  ? 'agotado'
-                  : producto.stock <= 10
-                    ? 'poco-stock'
-                    : 'disponible'
-              }
-            >
-              {producto.stock === 0
-                ? 'Agotado'
-                : `${producto.stock} unidades`}
-            </strong>
-          </div>
-
-          {/* SOLO EN POCO STOCK */}
-          {modo === 'poco-stock' && (
-            <div className="reabastecimiento">
-              <input
-                type="number"
-                min="1"
-                placeholder="Cantidad"
-                value={cantidades[producto.id] || ''}
-                onChange={(e) =>
-                  cambiarCantidad(
-                    producto.id,
-                    e.target.value
-                  )
-                }
-              />
-
-              <button
-                onClick={() =>
-                  reabastecer(producto.id)
-                }
-              >
-                Reabastecer
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  </article>
-)
-
+          </>
+        )}
+      </div>
+    </article>
+  )
 
   return (
     <main className="tienda">
@@ -384,15 +419,15 @@ const ProductoCard = ({
             <p>{error}</p>
           </div>
         ) : productos.length > 0 ? (
-         <div className="productos">
-          {productos.map((producto) => (
-            <ProductoCard
-              key={producto.id}
-              producto={producto}
-              modo="todos"
-            />
-          ))}
-        </div>
+          <div className="productos">
+            {productos.map((producto) => (
+              <ProductoCard
+                key={producto.id}
+                producto={producto}
+                modo="todos"
+              />
+            ))}
+          </div>
         ) : (
           <div className="sin-productos">
             <span></span>
@@ -422,14 +457,14 @@ const ProductoCard = ({
           </div>
 
           <div className="productos">
-        {productosPocoStock.map((producto) => (
-          <ProductoCard
-            key={producto.id}
-            producto={producto}
-            modo="poco-stock"
-          />
-        ))}
-</div>
+            {productosPocoStock.map((producto) => (
+              <ProductoCard
+                key={producto.id}
+                producto={producto}
+                modo="poco-stock"
+              />
+            ))}
+          </div>
         </section>
       )}
 
