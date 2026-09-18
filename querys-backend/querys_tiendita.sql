@@ -73,6 +73,22 @@ CREATE VIEW vw_productos_bajo_stock AS
     ORDER BY stock, id_producto;
 
 
+-- Views para mostrar los productos
+
+CREATE VIEW vw_productos AS
+    SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+    FROM producto;
+
+CREATE VIEW vw_productos_bajo_stock AS
+    SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+    FROM producto
+    WHERE
+        (stock <= 10 AND precio > 100)
+        OR
+        (stock <= 3 AND precio <= 100)
+    ORDER BY stock, id_producto;
+
+
 -- Stored Procedure para manejar el todas las acciones de la interfaz.
 -- Los selects son necesarios, porque Express necesita que le regrese datos
 DELIMITER //
@@ -105,26 +121,8 @@ BEGIN
 
     CASE opc
 
-        -- Select all productos
-        WHEN 1 THEN
-
-            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
-            FROM producto
-            ORDER BY id_producto;
-
-        -- Select productos con el warning del bajo stock
-        WHEN 2 THEN
-
-            SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
-            FROM producto
-            WHERE
-                (stock <= 10 AND precio > 100)
-                OR
-                (stock <= 3 AND precio <= 100)
-            ORDER BY stock, id_producto;
-
         -- Reabastece el stock, con el sp Reabastecer Producto
-        WHEN 3 THEN
+        WHEN 1 THEN
 
             CALL ReabastecerProducto(_stockNuevo, _id_producto);
 
@@ -133,7 +131,7 @@ BEGIN
             WHERE id_producto = _id_producto;
 
         -- Delete un producto
-        WHEN 4 THEN
+        WHEN 2 THEN
 
             IF EXISTS (SELECT 1 FROM producto WHERE id_producto = _id_producto) 
                 THEN
@@ -151,7 +149,7 @@ BEGIN
             END IF;
         
         -- Actualizar un producto
-        WHEN 5 THEN
+        WHEN 3 THEN
 
             UPDATE producto
             SET
