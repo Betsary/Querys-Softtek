@@ -59,6 +59,19 @@ END//
  
 DELIMITER ;
 
+CREATE VIEW vw_productos AS
+    SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+    FROM producto;
+
+CREATE VIEW vw_productos_bajo_stock AS
+    SELECT id_producto AS id, nombre, descripcion, categoria, status, precio, stock
+    FROM producto
+    WHERE
+        (stock <= 10 AND precio > 100)
+        OR
+        (stock <= 3 AND precio <= 100)
+    ORDER BY stock, id_producto;
+
 
 -- Stored Procedure para manejar el todas las acciones de la interfaz.
 -- Los selects son necesarios, porque Express necesita que le regrese datos
