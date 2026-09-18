@@ -1,127 +1,183 @@
 const pool = require('../db');
 
-const getVisitorsService = async (req, res) => {
-    const { service } = req.query;
 
+//Todos los empleados que fueron a ambos servicios
+
+const getTodosLosEmpleadosRepetidores = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE service = ${1}',
-            [service]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT DISTINCT id,
+                nombre,
+                apellido,
+                genero,
+                edad
+            FROM vista_empleados_tramposos
+        `);
+
+        res.json(rows);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por servicio:', error);
+        console.error('Error al obtener empleados repetidores:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitorsBoth = async (req, res) => {
-    const { service1, service2 } = req.query;
 
+//Todas las mujeres que repitieron
+
+const getMujeresRepetidores = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE service = ${1} AND service = ${2}',
-            [service1, service2]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT COUNT(Distinct id) AS total_mujeres
+            FROM vista_empleados_tramposos
+            WHERE genero = 'M';
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por ambos servicios:', error);
+        console.error('Error al obtener repetidores por género:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitorsNone = async (req, res) => {
-    const { service1, service2 } = req.query;
 
+//Todos los hombres que repitieron
+
+const getHombresRepetidores = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE service != ${1} AND service != ${2}',
-            [service1, service2]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT COUNT(Distinct id) AS total_hombres
+            FROM vista_empleados_tramposos
+            WHERE genero = 'H';
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por ningun servicio:', error);
+        console.error('Error al obtener repetidores por género:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitorsByAgeRange = async (req, res) => {
-    const { minAge, maxAge } = req.query;
 
+
+//Cantidad total de personas que fueron a ambos servicios
+
+const getTotalRepetidores = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE age >= ${1} AND age <= ${2}',
-            [minAge, maxAge]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT COUNT(DISTINCT id) AS total_personas
+            FROM vista_empleados_tramposos
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por rango de edad:', error);
+        console.error('Error al obtener total de repetidores:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitorsByGender = async (req, res) => {
-    const { gender } = req.query;
 
+//Cantidad de personas que fueron al Masaje
+
+const getTotalMasaje = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE gender = ${1}',
-            [gender]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT COUNT(DISTINCT empleados.id) AS total_masaje
+            FROM Empleados
+            INNER JOIN Masaje
+                ON empleados.id = masaje.id_empleado
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por género:', error);
+        console.error('Error al obtener total de masaje:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitorsByDepartment = async (req, res) => {
-    const { department } = req.query;
 
+//Cantidad de personas que fueron al Spa
+
+const getTotalSpa = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visitors WHERE department = ${1}',
-            [department]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT COUNT(DISTINCT empleados.id) AS total_spa
+            FROM Empleados
+            INNER JOIN Spa
+                ON empleados.id = spa.id_empleado
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener visitantes por departamento:', error);
+        console.error('Error al obtener total de spa:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getVisitsUser = async (req, res) => {
-    const { userId } = req.query;
 
+//Distribución de edades 
+
+const getRepetidoresPorEdad = async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM visits WHERE user_id = ${1}',
-            [userId]
-        );
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT
+                edad,
+                COUNT(DISTINCT id) AS cantidad,
+                ROUND(
+                    100.0 * COUNT(DISTINCT id) /
+                    (
+                        SELECT COUNT(DISTINCT id)
+                        FROM vista_empleados_tramposos
+                    ),
+                    2
+                ) AS porcentaje
+            FROM vista_empleados_tramposos
+            GROUP BY edad
+            ORDER BY edad
+        `);
+
+        res.json(rows);
+
     } catch (error) {
-        console.error('Error al obtener visitas por usuario:', error);
+        console.error('Error al obtener distribución por edad:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
 
-const getAllUsers = async (req, res) => {
+
+//Promedio de edad de la gente que fue a ambos servicios
+
+const getPromedioEdad = async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM users');
-        res.json(result.rows);
+        const [rows] = await pool.query(`
+            SELECT ROUND(AVG(edad), 2) AS promedio
+            FROM (
+                SELECT DISTINCT id, edad
+                FROM vista_empleados_tramposos
+            ) AS empleados_unicos
+        `);
+
+        res.json(rows[0]);
+
     } catch (error) {
-        console.error('Error al obtener usuarios:', error);
+        console.error('Error al obtener promedio de edad:', error);
         res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+};
+
 
 module.exports = {
-    getVisitorsService,
-    getAllUsers,
-    getVisitorsBoth,
-    getVisitorsNone,
-    getVisitorsByAgeRange,
-    getVisitorsByGender,
-    getVisitorsByDepartment,
-    getVisitsUser
+    getTodosLosEmpleadosRepetidores,
+    getMujeresRepetidores,
+    getHombresRepetidores,
+    getTotalRepetidores,
+    getTotalMasaje,
+    getTotalSpa,
+    getRepetidoresPorEdad,
+    getPromedioEdad
 };

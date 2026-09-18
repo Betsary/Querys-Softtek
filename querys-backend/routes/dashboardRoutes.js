@@ -1,14 +1,64 @@
 const express = require('express');
+
 const router = express.Router();
+
 const dashBoardController = require('../controllers/dashboardController');
 
-router.post('/services/service', dashBoardController.getVisitorsService);
-router.post('/services/both', dashBoardController.getVisitorsBoth);
-router.post('/services/none', dashBoardController.getVisitorsNone);
-router.post('/services/age-range', dashBoardController.getVisitorsByAgeRange);
-router.post('/services/gender', dashBoardController.getVisitorsByGender);
-router.post('/services/department', dashBoardController.getVisitorsByDepartment);
-router.post('/services/visits-user', dashBoardController.getVisitsUser);
-router.get('/services/users', dashBoardController.getAllUsers);
+
+// Todos los empleados que fueron a ambos servicios
+router.get(
+    '/services/repetidores',
+    dashBoardController.getTodosLosEmpleadosRepetidores
+);
+
+
+// Cantidad de mujeres que fueron a ambos servicios
+router.get(
+    '/services/repetidores/mujeres',
+    dashBoardController.getMujeresRepetidores
+);
+
+
+// Cantidad de hombres que fueron a ambos servicios
+router.get(
+    '/services/repetidores/hombres',
+    dashBoardController.getHombresRepetidores
+);
+
+
+// Cantidad total de empleados que fueron a ambos servicios
+router.get(
+    '/services/repetidores/total',
+    dashBoardController.getTotalRepetidores
+);
+
+
+// Cantidad de empleados que fueron a masaje
+router.get(
+    '/services/masaje/total',
+    dashBoardController.getTotalMasaje
+);
+
+
+// Cantidad de empleados que fueron al spa
+router.get(
+    '/services/spa/total',
+    dashBoardController.getTotalSpa
+);
+
+
+// Distribución de edades de empleados que fueron a ambos servicios
+router.get(
+    '/services/repetidores/edades',
+    dashBoardController.getRepetidoresPorEdad
+);
+
+
+// Promedio de edad de empleados que fueron a ambos servicios
+router.get(
+    '/services/repetidores/promedio-edad',
+    dashBoardController.getPromedioEdad
+);
+
 
 module.exports = router;
