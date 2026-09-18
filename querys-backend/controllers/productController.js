@@ -1,11 +1,9 @@
 const pool = require('../db');
 
 const STATES = {
-    SELECT: 1,
-    SELECT_WARNING: 2,
-    UPDATE_STOCK: 3,
-    DELETE_PRODUCT: 4,
-    UPDATE_PRODUCT: 5
+    UPDATE_STOCK: 1,
+    DELETE_PRODUCT: 2,
+    UPDATE_PRODUCT: 3
 };
 
 const ejecutarCrud = async (option, data = {}) => {
@@ -31,7 +29,7 @@ const crud = async (req, res) => {
     if (
         !Number.isInteger(option) ||
         option < 1 ||
-        option > 5 ||
+        option > 3 ||
         typeof data !== 'object' ||
         data === null ||
         Array.isArray(data)
@@ -56,9 +54,9 @@ const crud = async (req, res) => {
 
 const getProducts = async (req, res) => {
     try {
-        const products = await ejecutarCrud(STATES.SELECT);
+        const [rows] = await pool.query(`SELECT * FROM vw_productos`);
 
-        res.json(products);
+        res.json(rows);
     } catch (error) {
         console.error(
             'Error al obtener productos:',
@@ -73,19 +71,17 @@ const getProducts = async (req, res) => {
 
 const getProductsWarning = async (req, res) => {
     try {
-        const products = await ejecutarCrud(
-            STATES.SELECT_WARNING
-        );
+        const [rows] = await pool.query(`SELECT * FROM vw_productos_bajo_stock`);
 
-        res.json(products);
+        res.json(rows);
     } catch (error) {
         console.error(
-            'Error al obtener productos con poco stock:',
+            'Error al obtener productos con problema de stock:',
             error.message
         );
 
         res.status(500).json({
-            error: 'No se pudieron obtener los productos con poco stock'
+            error: 'No se pudieron obtener los productos con problema de stock'
         });
     }
 };
@@ -205,7 +201,7 @@ const updateProduct = async (req, res) => {
                 nombre: nombre.trim(),
                 descripcion: descripcion.trim(),
                 categoria: categoria.trim(),
-                status: status,
+                status: status ? 1 : 0,
                 precio: precio,
                 stock: stock
             }

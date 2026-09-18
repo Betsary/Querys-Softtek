@@ -25,23 +25,12 @@ const imagenesPorCategoria: Record<string, string> = {
 
 type ProductoApi = Omit<Producto, 'imagen'>
 
-const ejecutarCrud = async (optionMenu: number, data = {}) => {
-  const respuesta = await fetch('/api/products/crud', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ optionMenu, data }),
-  })
-
-  if (!respuesta.ok) {
-    const detalle = await respuesta.json().catch(() => null)
-    throw new Error(detalle?.error ?? 'No se pudo realizar la operación')
-  }
-
-  return respuesta.json()
-}
-
 const adaptarProducto = (producto: ProductoApi): Producto => ({
   ...producto,
+  id: Number(producto.id),
+  precio: Number(producto.precio),
+  stock: Number(producto.stock),
+  status: Boolean(Number(producto.status)),
   imagen:
     imagenesPorCategoria[producto.categoria] ??
     'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=500',
@@ -63,10 +52,17 @@ function Tienda() {
   
     const cargarProductos = async () => {
       try {
-        const [datosProductos, datosPocoStock] = await Promise.all([
-          ejecutarCrud(1),
-          ejecutarCrud(2),
+        const [respuestaProductos, respuestaPocoStock] = await Promise.all([
+          fetch('/api/products'),
+          fetch('/api/productsWarning'),
         ])
+
+        if (!respuestaProductos.ok || !respuestaPocoStock.ok) {
+          throw new Error('No se pudieron obtener los productos')
+        }
+
+        const datosProductos = await respuestaProductos.json()
+        const datosPocoStock = await respuestaPocoStock.json()
   
         setProductos((datosProductos as ProductoApi[]).map(adaptarProducto))
         setProductosPocoStock(
@@ -105,10 +101,22 @@ function Tienda() {
       }
   
       try {
-        await ejecutarCrud(3, {
-          id_producto: id,
-          stockUpdate: cantidad,
+        const respuesta = await fetch(`/api/products/updateStock/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            stock: cantidad,
+          }),
         })
+
+        if (!respuesta.ok) {
+          const detalle = await respuesta.json().catch(() => null)
+          throw new Error(
+            detalle?.error ?? 'No se pudo actualizar el stock'
+          )
+        }
   
         setCantidades((prev) => ({
           ...prev,
@@ -135,9 +143,16 @@ function Tienda() {
   
       void (async () => {
         try {
-          await ejecutarCrud(4, {
-            id_producto: id,
+          const respuesta = await fetch(`/api/products/delete/${id}`, {
+            method: 'DELETE',
           })
+
+          if (!respuesta.ok) {
+            const detalle = await respuesta.json().catch(() => null)
+            throw new Error(
+              detalle?.error ?? 'No se pudo eliminar el producto'
+            )
+          }
   
           await cargarProductos()
         } catch (requestError) {
@@ -182,15 +197,30 @@ function Tienda() {
       }
   
       try {
-        await ejecutarCrud(5, {
-          id_producto: productoEditado.id,
-          nombre: productoEditado.nombre,
-          descripcion: productoEditado.descripcion,
-          categoria: productoEditado.categoria,
-          status: productoEditado.status,
-          precio: productoEditado.precio,
-          stock: productoEditado.stock,
-        })
+        const respuesta = await fetch(
+          `/api/products/update/${productoEditado.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              nombre: productoEditado.nombre,
+              descripcion: productoEditado.descripcion,
+              categoria: productoEditado.categoria,
+              status: productoEditado.status,
+              precio: productoEditado.precio,
+              stock: productoEditado.stock,
+            }),
+          }
+        )
+
+        if (!respuesta.ok) {
+          const detalle = await respuesta.json().catch(() => null)
+          throw new Error(
+            detalle?.error ?? 'No se pudo actualizar el producto'
+          )
+        }
   
         cancelarEdicion()
         await cargarProductos()
@@ -467,7 +497,7 @@ function Tienda() {
           </section>
         )}
       </main>
-  )
+    )
 }
 
 export default Tienda
